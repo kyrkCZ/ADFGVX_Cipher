@@ -4,26 +4,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.adfgvx.ui.theme.ADFGVXTheme
-
 
 fun encryptADFGX(text: String): String {
     // Your ADFGX encryption code goes here
@@ -39,38 +36,37 @@ fun encryptADFGVX(text: String): String {
 
 
 fun generateAlphabetMatrixWithIndexes5x5(): Array<Array<Pair<Char, Char>>> {
-    // Inicializujeme abecedu
-    val alphabet = "ABCDEFGHIKLMNOPQRSTUVXYZ"
+    // Initialize the alphabet
+    val alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
 
-    // Inicializujeme matici 5x5
+    // Initialize the 5x5 matrix
     val matrix = Array(5) { Array(5) { Pair(' ', ' ') } }
 
-    // Inicializujeme indexy pro řádky a sloupce
+    // Initialize the row and column indexes
     val rowIndexes = "ADFGX"
     val colIndexes = "ADFGX"
 
-    // Inicializujeme index pro abecedu
+    // Initialize the index for the alphabet
     var alphabetIndex = 0
 
-    // Projdeme matici a naplníme ji písmeny z abecedy a indexy
+    // Loop through the matrix and fill it with letters from the alphabet and indexes
     for (i in 0 until 5) {
         for (j in 0 until 5) {
-            // Pokud jsme narazili na 'J' nebo 'W', nahradíme je 'I' resp. 'V'
+            // If 'J' is encountered, replace it with 'I'
             val currentChar = alphabet[alphabetIndex]
             if (currentChar == 'J') {
                 matrix[i][j] = Pair('I', rowIndexes[i])
-            } else if (currentChar == 'W') {
-                matrix[i][j] = Pair('V', colIndexes[j])
             } else {
-                matrix[i][j] = Pair(currentChar, rowIndexes[i])
+                matrix[i][j] = Pair(currentChar, colIndexes[j])
             }
 
-            // Posuneme se na další písmeno v abecedě
+            // Move to the next letter in the alphabet
             alphabetIndex++
         }
     }
     return matrix
 }
+
 
 fun generateAlphabetMatrixWithIndexes6x6(): Array<Array<Pair<Char, Char>>> {
     // Inicializujeme abecedu
@@ -111,27 +107,40 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ADFGVXTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = Color(0xFFEDEDED)
                 ) {
-                    NavigationBar(onCipherSelected = { cipher ->
-                        when (cipher) {
-                            "ADFGX" -> {
-                                ADFGXCipher(
-                                    alphabetMatrix = generateAlphabetMatrixWithIndexes5x5()
-                                )
-                            }
-                            "ADFG(V)X" -> {
-                                ADFGVXCipher(
-                                    alphabetMatrix = generateAlphabetMatrixWithIndexes6x6()
-                                )
-                            }
-                        }
-                    })
+                    Activity()
                 }
             }
+        }
+    }
+}
+@Preview
+@Composable
+fun Activity() {
+    var alphabetMatrix by remember {
+        mutableStateOf(generateAlphabetMatrixWithIndexes5x5())
+    }
+    var activeCipher by remember { mutableStateOf("ADFGX") }
+
+    Column {
+        NavigationBar(onCipherSelected = { cipher ->
+            when (cipher) {
+                "ADFGX" -> {
+                    alphabetMatrix = generateAlphabetMatrixWithIndexes5x5()
+                }
+                "ADFG(V)X" -> {
+                    alphabetMatrix = generateAlphabetMatrixWithIndexes6x6()
+                }
+            }
+            activeCipher = cipher
+        })
+
+        when (activeCipher) {
+            "ADFGX" -> ADFGXCipher(alphabetMatrix)
+            "ADFG(V)X" -> ADFGVXCipher(alphabetMatrix)
         }
     }
 }
@@ -142,8 +151,10 @@ fun NavigationBar(onCipherSelected: (String) -> Unit) {
 
     Row(
         modifier = Modifier
+            .padding(5.dp)
             .fillMaxWidth()
-            .background(androidx.compose.ui.graphics.Color.Gray)
+            .background(color = Color.Black, MaterialTheme.shapes.medium),
+        horizontalArrangement = Arrangement.SpaceBetween // Adjusted here
     ) {
         NavigationButton("ADFGX", activeCipher == "ADFGX") {
             activeCipher = "ADFGX"
@@ -164,7 +175,7 @@ fun NavigationButton(text: String, isActive: Boolean, onClick: () -> Unit) {
         modifier = Modifier.padding(8.dp),
         content = { Text(text) },
         colors = ButtonDefaults.buttonColors(
-            contentColor = if (isActive) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black,
+            contentColor = if (isActive) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
         )
     )
 }
@@ -179,7 +190,6 @@ fun ADFGXCipher(alphabetMatrix: Array<Array<Pair<Char, Char>>>) {
             value = inputText,
             onValueChange = {
                 inputText = it
-                // Implement the encryption logic here
                 encryptedText = encryptADFGX(it)
             },
             singleLine = true,
@@ -205,7 +215,6 @@ fun ADFGVXCipher(alphabetMatrix: Array<Array<Pair<Char, Char>>>) {
             value = inputText,
             onValueChange = {
                 inputText = it
-                // Implement the encryption logic here
                 encryptedText = encryptADFGVX(it)
             },
             singleLine = true,
@@ -218,5 +227,37 @@ fun ADFGVXCipher(alphabetMatrix: Array<Array<Pair<Char, Char>>>) {
             singleLine = true,
             modifier = Modifier.padding(16.dp)
         )
+    }
+}
+
+@Composable
+fun MatrixUI(matrix: Array<Array<Pair<Char, Char>>>) {
+    LazyColumn {
+        items(matrix.size) { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                matrix[row].forEach { cell ->
+                    MatrixCell(cell.first)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MatrixCell(char: Char) {
+    Surface(
+        modifier = Modifier.size(40.dp),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = char.toString(), fontWeight = FontWeight.Bold)
+        }
     }
 }
