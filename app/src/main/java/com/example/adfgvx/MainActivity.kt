@@ -50,14 +50,23 @@ fun replacePlainTextWithMatrixValues(plainText: String, matrix: Array<Array<Pair
 
     for (char in plainText) {
         if (char.isLetterOrDigit()) {
-            val rowIndex = matrix.flatten().find { it.first == char }?.second ?: ""
-            formattedText.append("$rowIndex ")
-        } else {
-            formattedText.append(char)
+            val value = findValueInMatrix(char, matrix)
+            formattedText.append("$value ")
         }
     }
 
     return formattedText.toString().trim()
+}
+
+fun findValueInMatrix(char: Char, matrix: Array<Array<Pair<Char, String>>>): String {
+    for (row in matrix) {
+        for (pair in row) {
+            if (pair.first == char) {
+                return pair.second
+            }
+        }
+    }
+    return "" // Return an empty string if the character is not found in the matrix.
 }
 
 fun indexStringToPairs(input: String): Array<Pair<Char, Int>> {
@@ -164,12 +173,18 @@ fun buildStringFromPairs(pairs: List<Pair<Pair<Char, Int>, String>>): String {
 fun replaceStringWithMatrixValues(input: String, matrix: Array<Pair<Char, String>>): String {
     val formattedText = StringBuilder()
 
-    for (char in input) {
-        if (char.isLetterOrDigit()) {
-            val value = matrix.find { it.first == char }?.second ?: ""
-            formattedText.append("$value ")
+    val splitText = splitStringByXChars(input, 2)
+
+    for (string in splitText) {
+        if (string.length == 2) {
+            val char = matrix.find { it.second == string }?.first
+            if (char != null) {
+                formattedText.append(char)
+            } else {
+                formattedText.append(string) // If not found in the matrix, keep the original string.
+            }
         } else {
-            formattedText.append(char)
+            formattedText.append(string) // Keep any remaining characters that are not 2 characters long.
         }
     }
 
@@ -312,6 +327,7 @@ fun NavigationButton(text: String, isActive: Boolean, onClick: () -> Unit) {
     )
 }
 
+@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ADFGVXCipher() {
@@ -373,15 +389,15 @@ fun ADFGVXCipher() {
 
             Button(onClick = {
                 if(czechAlphabet) plainText = plainText.uppercase()
-                plainText = removeDiacritics(plainText)
+                plainText = removeDiacritics(plainText).uppercase()
                 textFormated = replacePlainTextWithMatrixValues(plainText,alphabetMatrix)
+                Log.d("textFormated", textFormated)
                 ciphredText = try {
                     cipherADFGX(textFormated, key)
                 } catch (e: Exception) {
                     Toast.makeText(context, "Key is invalid", Toast.LENGTH_SHORT).show()
                     ""
                 }
-                //ciphredText = encryptADFGX(alphabetMatrix, plainText, key)
             }) {
                 Text(text = "Cipher")
                 Modifier.fillMaxWidth(0f)
@@ -545,9 +561,9 @@ fun ADFGXCipher() {
                 Log.d("dataFromMetrix", extractDataFromMatrix5x5(alphabetMatrix).toString())
                 val datafromMetrix = createMatrixPairs(extractDataFromMatrix5x5(alphabetMatrix))
                 Log.d("dataFromMetrixPair", datafromMetrix[0].toString())
-                val plainDecipheredText = plaindecipheredText.drop(22)
+                val plainDecipheredText = plaindecipheredText.drop(22).replace(" ", "")
                 Log.d("plainDecipheredText", plainDecipheredText)
-                decipheredText = replaceStringWithMatrixValues(plainDecipheredText.replace(" ",""), datafromMetrix)
+                decipheredText = replaceStringWithMatrixValues(plainDecipheredText, datafromMetrix)
                 Log.d("decipheredText", decipheredText)
             }) {
                 Text(text = "Decipher")
